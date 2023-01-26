@@ -46,6 +46,7 @@ app.get("/", function(req, res){
                     console.log("Successfully saved all the default values to todolistDB");
                 }
             });
+            res.redirect("/");
         } else {
             res.render("list", { listTitle: "Today", newListItems: foundItems });
         }
