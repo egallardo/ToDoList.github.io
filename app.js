@@ -3,6 +3,7 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
+const _ = require("lodash");
 
 const app = express();
 app.set('view engine', 'ejs');
@@ -83,32 +84,40 @@ app.post("/", function(req, res){
 
 app.post("/delete", function(req, res){
     const checkedItemId = req.body.checkbox;
-    Item.findByIdAndRemove(checkedItemId, function(err){
-        if(err){
-            console.log(err);
-        }else{
-            console.log("Item deleted");
-        }
-    });
-    res.redirect("/");
+    const listName = req.body.listName;
+
+    if (listName === "Today"){
+        Item.findByIdAndRemove(checkedItemId, function(err){
+            if(!err){
+                console.log("Item deleted");
+                res.redirect("/");
+            }
+        });
+    }else{
+        List.findOneAndUpdate({name: listName},{$pull: {items: {_id: checkedItemId}}}, function(err, foundList){
+            if(!err){
+                res.redirect("/"+listName);
+            }
+        });
+    }
 });
 
 app.get("/:customList", function(req, res){
-    const customListName = req.params.customList;
+    const customListName = _.capitalize(req.params.customList);
     List.findOne({name: customListName}, function(err, foundList){
         if(!err){
             if (!foundList){
-            //create a new list
-            const list = new List({
-                name: customListName,
-                items: defaultItems
-            });
-            list.save();
-            res.redirect("/"+customListName);
-        }else {
-            //show an existing list
-            res.render("list", {listTitle: foundList.name, newListItems: foundList.items});
-        }
+                //create a new list
+                const list = new List({
+                    name: customListName,
+                    items: defaultItems
+                });
+                list.save();
+                res.redirect("/"+customListName);
+            }else {
+                //show an existing list
+                res.render("list", {listTitle: foundList.name, newListItems: foundList.items});
+            }
         }
     });
 });
